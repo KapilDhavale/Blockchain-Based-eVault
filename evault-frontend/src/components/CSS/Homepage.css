@@ -21,14 +21,14 @@ body {
   /* Ensures the image covers the entire screen */
 }
 
-.darkcover {
+.home-darkcover {
   position: absolute;
   /* Ensure it covers the entire container */
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(234, 132, 132, 0.1);
+  background-color: rgba(0, 0, 0, 0.65);
   /* Reduced dark overlay */
   display: flex;
   flex-direction: column;
@@ -38,6 +38,7 @@ body {
   align-items: center;
   /* Center horizontally */
 }
+
 
 .title {
   width: auto;

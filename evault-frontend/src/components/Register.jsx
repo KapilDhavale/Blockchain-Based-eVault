@@ -1,18 +1,39 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./CSS/Register.css"; // Ensure this path is correct
 
 const Register = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     role: "",
-    wallet: "", // Optional wallet field for MetaMask users
+    wallet: "", // Wallet field for MetaMask users
   });
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
+  // Handle input change
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Handle MetaMask Connection
+  const connectMetaMask = async () => {
+    if (window.ethereum) {
+      try {
+        const accounts = await window.ethereum.request({
+          method: "eth_requestAccounts",
+        });
+        setFormData({ ...formData, wallet: accounts[0] }); // Fill wallet field
+      } catch (error) {
+        setMessage("MetaMask connection failed. Please try again.");
+      }
+    } else {
+      setMessage("MetaMask is not installed. Please install it to connect.");
+    }
+  };
+
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage(""); // Clear previous messages
@@ -38,46 +59,89 @@ const Register = () => {
   };
 
   return (
-    <div className="register-container">
-      <h2>Register</h2>
-      {message && <p>{message}</p>}
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
-        <select
-          name="role"
-          value={formData.role}
-          onChange={handleChange}
-          required
-        >
-          <option value="">Select Role</option>
-          <option value="client">Client</option>
-          <option value="lawyer">Lawyer</option>
-          <option value="admin">Admin</option>
-        </select>
-        <input
-          type="text"
-          name="wallet"
-          placeholder="Wallet Address (optional)"
-          value={formData.wallet}
-          onChange={handleChange}
-        />
-        <button type="submit">Register</button>
-      </form>
+    <div className="register">
+      <div className="register-container">
+        {message && <p className="register-message">{message}</p>}
+        <form onSubmit={handleSubmit}>
+          <div className="input-container">
+            <label id="register-label" htmlFor="email">
+              Email:
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="input-container">
+            <label id="register-label" htmlFor="password">
+              Password:
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="input-container">
+            <label id="register-label" htmlFor="role">
+              Role:
+            </label>
+            <select
+              id="role"
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select Role</option>
+              <option value="client">Client</option>
+              <option value="lawyer">Lawyer</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div className="input-container">
+            <label id="register-label" htmlFor="wallet">
+              Wallet:
+            </label>
+            <input
+              type="text"
+              id="wallet"
+              name="wallet"
+              placeholder="Wallet Address (optional)"
+              value={formData.wallet}
+              onChange={handleChange}
+              readOnly
+            />
+          </div>
+          <button
+            type="button"
+            className="connect-metamask"
+            onClick={connectMetaMask}
+          >
+            Connect MetaMask
+          </button>
+          <button type="submit">Register</button>
+          <p id="loginPrompt">
+            Already have an account?{" "}
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => navigate("/login")}
+            >
+              Login here
+            </button>
+          </p>
+        </form>
+      </div>
     </div>
   );
 };

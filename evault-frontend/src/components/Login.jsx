@@ -32,12 +32,11 @@ const Login = () => {
 
   return (
     <div className="login">
-      <div className="overlay"></div>
-      <div id="evault">Evault</div>
-      <form onSubmit={handleLogin}>
+      <div className="login-overlay"></div>
+      <form id="login-form" onSubmit={handleLogin}>
         <div className="form-content">
           <div className="input-container">
-            <label>Email:</label>
+            <label id="login-label">Email:</label>
             <input
               type="email"
               value={email}
@@ -46,7 +45,7 @@ const Login = () => {
             />
           </div>
           <div className="input-container">
-            <label>Password:</label>
+            <label id="login-label">Password:</label>
             <input
               type="password"
               value={password}
@@ -56,12 +55,12 @@ const Login = () => {
           </div>
           {error && <p className="alert">{error}</p>}
         </div>
-        <button type="submit">Login</button>
+        <button id="login-btn" type="submit">Login</button>
       <p id="registerPrompt">
   Don't have an account?{" "}
   <button
     type="button"
-    className="link-button"
+    id="link-button-login"
     onClick={() => navigate("/register")}
   >
     Register here

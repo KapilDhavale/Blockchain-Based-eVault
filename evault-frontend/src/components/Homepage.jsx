@@ -15,7 +15,7 @@ const Homepage = () => {
       {/* Hero Section */}
       <div className="container">
         <img src="/law-bg.jpg" alt="homepage-law" className="image" />
-        <div className="darkcover">
+        <div className="home-darkcover">
           <div className="title">BLOCKCHAIN BASED e-VAULT</div>
           <button
             id="startButton"
