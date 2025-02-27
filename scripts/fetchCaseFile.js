@@ -1,33 +1,30 @@
-// fetchCaseFiles.js
-
 const { ethers } = require("hardhat");
 require("dotenv").config();
 
 async function fetchCaseFiles() {
-  const [deployer] = await ethers.getSigners();
-  console.log("Fetching case file with the account:", deployer.address);
+  const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545"); // Hardhat local node
+  const deployer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
-  const NavinEvault = await ethers.getContractFactory("NavinEvault");
-  const contract = await NavinEvault.attach(
-    process.env.NAVINEVAULT_CONTRACT_ADDRESS,
-  );
+  console.log("Fetching case files with the account:", deployer.address);
+
+  const NavinEvault = await ethers.getContractFactory("NavinEvault", deployer);
+  const contract = await NavinEvault.attach(process.env.NAVINEVAULT_CONTRACT_ADDRESS);
 
   try {
     const totalFiles = await contract.totalCaseFiles();
     console.log(`Total case files: ${totalFiles.toString()}`);
-    console.log(`Type of totalFiles: ${typeof totalFiles}`);
 
-    if (totalFiles === 0n) {
-      console.log(
-        "No case files exist. Please upload a case file before fetching.",
-      );
+    if (totalFiles === 0n) {  // Fix: Use '0n' for BigInt comparison
+      console.log("No case files exist. Please upload a case file before fetching.");
       return { message: "No case files exist." };
     }
 
-    const allCaseFiles = []; // Initialize an array to hold all case file data
+    const allCaseFiles = [];
 
-    for (let i = 1; i <= totalFiles; i++) {
+    for (let i = 0; i < totalFiles; i++) { // Assuming 0-based indexing
       const caseFile = await contract.getFile(i);
+      console.log(`Fetching case file ${i}:`, caseFile);
+
       const caseFileData = {
         caseNumber: caseFile.caseNumber.toString(),
         title: caseFile.title || "N/A",
@@ -45,14 +42,17 @@ async function fetchCaseFiles() {
       allCaseFiles.push(caseFileData);
     }
 
-    return {
-      message: "Case files retrieved successfully",
-      files: allCaseFiles,
-    };
+    console.log("All case files retrieved:", allCaseFiles);
+    return { message: "Case files retrieved successfully", files: allCaseFiles };
   } catch (error) {
-    console.error(JSON.stringify({ error: error.message || error }));
-    throw error; // Rethrow the error to handle it in the server
+    console.error("Error fetching case files:", error);
+    throw error;
   }
 }
 
-module.exports = fetchCaseFiles; // Export the function
+fetchCaseFiles()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

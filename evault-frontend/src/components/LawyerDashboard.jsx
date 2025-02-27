@@ -32,18 +32,34 @@ const LawyerDashboard = () => {
     navigate("/login");
   };
 
+  // Navigate to UploadPage (Summariser)
+  const handleSummariserClick = () => {
+    navigate("/UploadPage");
+  };
+
+  // Navigate to FileManagement page (Upload Documents)
+  const handleUploadDocumentsClick = () => {
+    navigate("/file-management");
+  };
+
   return (
     <div className="dashboard-container">
       {/* Left Sidebar */}
       <div className="sidebar">
         <ul>
           <li>My Documents</li>
-          <li>Upload Documents</li>
+          <li onClick={handleSummariserClick} style={{ cursor: "pointer" }}>
+            Summariser
+          </li>
+          <li
+            onClick={handleUploadDocumentsClick}
+            style={{ cursor: "pointer" }}
+          >
+            Upload Documents
+          </li>
           <li>Case Schedules</li>
           <li>Profile</li>
           <li>Settings</li>
-
-          {/* Optionally, you can remove this Logout button if you want to rely solely on the dropdown */}
           <li onClick={handleLogout} style={{ cursor: "pointer" }}>
             Logout
           </li>
@@ -186,6 +202,7 @@ const LawyerDashboard = () => {
             </div>
           </div>
         </div>
+
         <div id="recent-cases">
           <h2>Recent Cases</h2>
           <p>Stay updated with your latest cases</p>

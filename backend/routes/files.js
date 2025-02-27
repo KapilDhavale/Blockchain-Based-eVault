@@ -1,7 +1,7 @@
 const express = require("express");
 const { ethers } = require("hardhat");
 const { authenticateToken } = require("../middleware/auth");
-const fileMetadata = require("../data/fileMetadata");
+const FileMetadata = require("../models/FileMetadata");
 
 const router = express.Router();
 
@@ -11,9 +11,7 @@ router.get("/", authenticateToken, async (req, res) => {
   console.log("Fetching case files with the account:", deployer.address);
 
   const NavinEvault = await ethers.getContractFactory("NavinEvault");
-  const contract = await NavinEvault.attach(
-    process.env.NAVINEVAULT_CONTRACT_ADDRESS,
-  );
+  const contract = await NavinEvault.attach(process.env.NAVINEVAULT_CONTRACT_ADDRESS);
 
   try {
     const totalFiles = await contract.totalCaseFiles();
@@ -29,7 +27,7 @@ router.get("/", authenticateToken, async (req, res) => {
       const caseFileData = {
         caseNumber: caseFile.caseNumber.toString(),
         title: caseFile.title || "N/A",
-        ipfsHash: caseFile.ipfsHash || null,
+        ipfsHash: caseFile.ipfsHash || null, // crucial data retrieved from blockchain
         dateOfJudgment: caseFile.dateOfJudgment || "N/A",
         category: caseFile.category || "N/A",
         judgeName: caseFile.judgeName || "N/A",
@@ -48,25 +46,30 @@ router.get("/", authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error("Error retrieving case files:", error);
-    res
-      .status(500)
-      .json({ message: "Error fetching case files", error: error.message });
+    res.status(500).json({ message: "Error fetching case files", error: error.message });
   }
 });
 
-// GET /files/metadata/:filename - retrieve metadata for a specific file from memory
-router.get("/metadata/:filename", authenticateToken, (req, res) => {
+// GET /files/metadata/:filename - retrieve metadata for a specific file from MongoDB
+router.get("/metadata/:filename", authenticateToken, async (req, res) => {
   const filename = req.params.filename;
-  const metadata = fileMetadata[filename];
-  if (metadata) {
-    res.json({
-      message: "Metadata retrieved successfully",
-      metadata,
-    });
-  } else {
-    res
-      .status(404)
-      .json({ message: "Metadata not found for the specified file" });
+  console.log("Requested filename:", filename);
+
+  try {
+    // Query MongoDB for the file metadata by the original file name
+    const metadata = await FileMetadata.findOne({ originalname: filename });
+    if (metadata) {
+      res.json({
+        message: "Metadata retrieved successfully",
+        metadata,
+      });
+    } else {
+      console.error("Metadata not found for:", filename);
+      res.status(404).json({ message: "Metadata not found for the specified file" });
+    }
+  } catch (err) {
+    console.error("Error fetching metadata:", err);
+    res.status(500).json({ message: "Error fetching metadata", error: err.message });
   }
 });
 
