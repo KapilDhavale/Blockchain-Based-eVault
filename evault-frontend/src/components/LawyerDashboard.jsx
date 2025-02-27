@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import axios from "axios";
 import {
   Avatar,
   TextField,
@@ -7,198 +8,144 @@ import {
   MenuItem,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import { useNavigate } from "react-router-dom"; // For redirection
-import "./CSS/LawyerDashboard.css"; // Ensure you have your necessary styles
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
+import "./CSS/LawyerDashboard.css";
 
 const LawyerDashboard = () => {
   const navigate = useNavigate();
+  const { user, logout } = useContext(AuthContext);
 
-  // For the dropdown menu
+  // Dropdown menu state
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
-  const handleAvatarClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
+  // Dynamic data states
+  const [dashboardData, setDashboardData] = useState({
+    documentCount: 0,
+    activeCases: [],
+    deadlines: [],
+    pendingTasks: 0,
+    completedTasks: 0,
+  });
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
 
-  // Logout function used in dropdown
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    handleMenuClose();
-    navigate("/login");
-  };
+        const [docRes, casesRes, tasksRes] = await Promise.all([
+          axios.get("http://localhost:5000/api/documents/count", { headers }),
+          axios.get("http://localhost:5000/api/cases/lawyer", { headers }),
+          axios.get("http://localhost:5000/api/tasks", { headers }),
+        ]);
 
-  // Navigate to UploadPage (Summariser)
-  const handleSummariserClick = () => {
-    navigate("/UploadPage");
-  };
+        setDashboardData({
+          documentCount: docRes.data.count,
+          activeCases: casesRes.data.filter((c) => c.status === "Open"),
+          deadlines: ["Feb 5 2025", "Feb 8 2025", "Feb 9 2025"],
+          pendingTasks: tasksRes.data.pending,
+          completedTasks: tasksRes.data.completed,
+        });
+      } catch (err) {
+        console.error("Error fetching dashboard data", err);
+      }
+    };
 
-  // Navigate to FileManagement page (Upload Documents)
-  const handleUploadDocumentsClick = () => {
-    navigate("/file-management");
-  };
+    fetchDashboardData();
+  }, []);
 
   return (
     <div className="dashboard-container">
-      {/* Left Sidebar */}
       <div className="sidebar">
         <ul>
           <li>My Documents</li>
-          <li onClick={handleSummariserClick} style={{ cursor: "pointer" }}>
-            Summariser
-          </li>
-          <li
-            onClick={handleUploadDocumentsClick}
-            style={{ cursor: "pointer" }}
-          >
-            Upload Documents
-          </li>
+          <li onClick={() => navigate("/UploadPage")} style={{ cursor: "pointer" }}>Summariser</li>
+          <li onClick={() => navigate("/file-management")} style={{ cursor: "pointer" }}>Upload Documents</li>
           <li>Case Schedules</li>
           <li>Profile</li>
           <li>Settings</li>
-          <li onClick={handleLogout} style={{ cursor: "pointer" }}>
-            Logout
-          </li>
+          <li onClick={logout} style={{ cursor: "pointer" }}>Logout</li>
         </ul>
       </div>
 
-      {/* Right Content Area */}
       <div className="content-area">
         <div className="placeholder-div">
-          {/* Welcome Message */}
-          <div id="welcome">
-            Welcome back,
-            <br /> Adv. Kapil Dhavale
-          </div>
-
-          {/* Profile & Search Bar Container */}
+          <div id="welcome">Welcome back, <br /> Adv. {user?.name || "User"}</div>
           <div id="header-home-box">
-            {/* Profile Avatar with Dropdown */}
-            <div id="profile-logo" style={{ position: "relative" }}>
-              <Avatar
-                alt="Profile"
-                src="/profile.jpg" // Replace with actual profile image URL
-                sx={{ width: 50, height: 50, cursor: "pointer" }}
-                onClick={handleAvatarClick}
-              />
-              <Menu
-                id="profile-menu"
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleMenuClose}
-                anchorOrigin={{
-                  vertical: "bottom",
-                  horizontal: "right",
-                }}
-                transformOrigin={{
-                  vertical: "top",
-                  horizontal: "right",
-                }}
-                ModalProps={{ disableScrollLock: true }} // Add this line
-              >
-                <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-                <MenuItem onClick={handleMenuClose}>My Account</MenuItem>
-                <MenuItem onClick={handleLogout}>Logout</MenuItem>
-              </Menu>
-            </div>
+            <Avatar 
+  alt="Profile" 
+  src={user?.profileImage || ""} 
+  sx={{ 
+    width: 50, 
+    height: 50, 
+    cursor: "pointer", 
+    bgcolor: user?.profileImage ? "transparent" : "#1976d2", 
+    color: "white", 
+    fontSize: "1.2rem", 
+    fontWeight: "bold" 
+  }} 
+  onClick={(e) => setAnchorEl(e.currentTarget)}
+>
+  {!user?.profileImage && user?.name 
+    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase() 
+    : ""}
+</Avatar>
 
-            {/* Search Bar */}
-            <div id="search-bar">
-              <TextField
-                id="search-bar-home"
-                variant="outlined"
-                placeholder="Search..."
-                size="small"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  backgroundColor: "rgb(216, 221, 219)",
-                  borderRadius: "5px",
-                  width: "250px",
-                  height: "36px", // fixed height for uniform look
-                  boxShadow: "none", // remove any default shadow
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "gray",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "gray",
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "gray",
-                  },
-                  "& .MuiOutlinedInput-root": {
-                    boxShadow: "none",
-                  },
-                }}
-              />
-            </div>
+            <Menu
+              anchorEl={anchorEl}
+              open={open}
+              onClose={() => setAnchorEl(null)}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "right" }}
+            >
+              <MenuItem onClick={() => setAnchorEl(null)}>Profile</MenuItem>
+              <MenuItem onClick={() => setAnchorEl(null)}>My Account</MenuItem>
+              <MenuItem onClick={logout}>Logout</MenuItem>
+            </Menu>
+            <TextField
+              id="search-bar-home"
+              variant="outlined"
+              placeholder="Search..."
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ backgroundColor: "rgb(216, 221, 219)", borderRadius: "5px", width: "250px", height: "36px" }}
+            />
           </div>
         </div>
 
         <div id="quick-taskbar">
-          {/* Box 1: Documents */}
           <div className="task-box box-documents">
-            {/* Add an image at the top */}
-            <img
-              src="/docs-uploaded-img.png"
-              alt="Documents Icon"
-              className="task-box-icon"
-            />
-            <h3>Total 245 Documents</h3>
+            <img src="/docs-uploaded-img.png" alt="Documents Icon" className="task-box-icon" />
+            <h3>Total {dashboardData.documentCount} Documents</h3>
             <p>Uploaded Till Now</p>
-            <button>Upload Now</button>
+            <button onClick={() => navigate("/file-management")}>Upload Now</button>
           </div>
 
-          {/* Box 2: Active Cases */}
           <div className="task-box box-cases">
-            <img
-              src="/active-cases-img.png"
-              alt="Cases Icon"
-              className="task-box-icon"
-            />
-            <h3>12 Active Cases</h3>
-            <div className="progress-info">
-              <div>Ongoing: 50%</div>
-              <div>Closed: 20%</div>
-              <div>Pending: 30%</div>
-            </div>
+            <img src="/active-cases-img.png" alt="Cases Icon" className="task-box-icon" />
+            <h3>{dashboardData.activeCases.length} Active Cases</h3>
           </div>
 
-          {/* Box 3: Deadlines */}
           <div className="task-box box-deadlines">
-            <img
-              src="/schedule-deadline-img.png"
-              alt="Deadlines Icon"
-              className="task-box-icon"
-            />
-            <h3>3 Deadlines This Week</h3>
-            <ul>
-              <li>Feb 5 2025</li>
-              <li>Feb 8 2025</li>
-              <li>Feb 9 2025</li>
-            </ul>
+            <img src="/schedule-deadline-img.png" alt="Deadlines Icon" className="task-box-icon" />
+            <h3>{dashboardData.deadlines.length} Deadlines This Week</h3>
+            <ul>{dashboardData.deadlines.map((d, i) => (<li key={i}>{d}</li>))}</ul>
           </div>
 
-          {/* Box 4: Taskboard */}
           <div className="task-box box-taskboard">
-            <img
-              src="/tasks-leaderboard-img.png"
-              alt="Taskboard Icon"
-              className="task-box-icon"
-            />
+            <img src="/tasks-leaderboard-img.png" alt="Taskboard Icon" className="task-box-icon" />
             <h3>Legal Taskboard</h3>
             <div id="tasks">
-              <p>2 Pending</p>
-              <p>0 Completed</p>
+              <p>{dashboardData.pendingTasks} Pending</p>
+              <p>{dashboardData.completedTasks} Completed</p>
             </div>
           </div>
         </div>
@@ -207,47 +154,14 @@ const LawyerDashboard = () => {
           <h2>Recent Cases</h2>
           <p>Stay updated with your latest cases</p>
           <div id="recent-cards">
-            {/* Case 1 */}
-            <div className="case-card">
-              <h3>XYZ Corp vs. John Doe</h3>
-              <div className="case-details">
-                <div className="case-left">
-                  <p>
-                    <strong>Client:</strong> John Doe
-                  </p>
-                  <p>In Progress</p>
-                  <button className="view-details">View Details</button>
-                </div>
-                <div className="case-right">
-                  <p>
-                    <strong>Last Updated:</strong> Feb 2, 2025
-                  </p>
-                  <p>Court Hearing – Feb 10, 2025</p>
-                  <button className="add-document">Add Document</button>
-                </div>
+            {dashboardData.activeCases.map((caseItem) => (
+              <div key={caseItem._id} className="case-card">
+                <h3>{caseItem.caseTitle}</h3>
+                <p><strong>Client:</strong> {caseItem.client?.name || "N/A"}</p>
+                <p>Status: {caseItem.status}</p>
+                <button className="view-details">View Details</button>
               </div>
-            </div>
-
-            {/* Case 2 */}
-            <div className="case-card">
-              <h3>Johnson Estate vs. Green Ltd.</h3>
-              <div className="case-details">
-                <div className="case-left">
-                  <p>
-                    <strong>Client:</strong> Johnson Estate
-                  </p>
-                  <p>Pending</p>
-                  <button className="view-details">View Details</button>
-                </div>
-                <div className="case-right">
-                  <p>
-                    <strong>Last Updated:</strong> Jan 30, 2025
-                  </p>
-                  <p>Court Hearing – Feb 15, 2025</p>
-                  <button className="add-document">Add Document</button>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>

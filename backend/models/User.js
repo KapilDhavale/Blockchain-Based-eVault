@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema(
   {
+    name: { type: String, required: true }, // Ensure name is required
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     wallet: { type: String, unique: true, sparse: true }, // Only for MetaMask users
@@ -12,7 +13,7 @@ const UserSchema = new mongoose.Schema(
     },
     permissions: { type: [String], default: [] },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("User", UserSchema);

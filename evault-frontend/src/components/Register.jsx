@@ -4,6 +4,7 @@ import "./CSS/Register.css"; // Ensure this path is correct
 
 const Register = () => {
   const [formData, setFormData] = useState({
+    name: "", // Ensure name is included
     email: "",
     password: "",
     role: "",
@@ -50,6 +51,7 @@ const Register = () => {
       const data = await response.json();
       if (response.ok) {
         setMessage("Registration successful! You can now log in.");
+        navigate("/login"); // Redirect after successful registration
       } else {
         setMessage(data.message || "Registration failed.");
       }
@@ -63,6 +65,20 @@ const Register = () => {
       <div className="register-container">
         {message && <p className="register-message">{message}</p>}
         <form onSubmit={handleSubmit}>
+          <div className="input-container">
+            <label id="register-label" htmlFor="name">
+              Name:
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              placeholder="Your Name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+          </div>
           <div className="input-container">
             <label id="register-label" htmlFor="email">
               Email:

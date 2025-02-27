@@ -2,38 +2,37 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
-const User = require("../models/User"); // Your updated Mongoose model
+const User = require("../models/User");
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 
 // Register endpoint
 router.post("/register", async (req, res) => {
   try {
-    // Extract wallet as an optional field
-    const { email, password, role, wallet } = req.body;
-    if (!email || !password || !role) {
+    const { name, email, password, role, wallet } = req.body;
+
+    if (!name || !email || !password || !role) {
       return res
         .status(400)
-        .json({ message: "Email, password, and role are required." });
+        .json({ message: "Name, email, password, and role are required." });
     }
 
-    // Check if user already exists in the DB
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists." });
     }
 
-    // Hash the password and create a new user document
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({
+      name, // Added name field
       email,
       password: hashedPassword,
       role,
-      wallet: wallet || undefined, // wallet is optional
+      wallet: wallet || undefined,
     });
-    const savedUser = await newUser.save();
 
-    console.log(`User registered: ${savedUser.email}`);
+    await newUser.save();
+
     res.status(201).json({ message: "User registered successfully." });
   } catch (error) {
     console.error("Error registering user:", error);
@@ -41,29 +40,24 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// Login endpoint remains unchanged
+// Login endpoint
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    // Find user in the DB
     const user = await User.findOne({ email });
-    if (!user) {
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(400).json({ message: "Invalid credentials." });
     }
 
-    // Compare the provided password with the stored hash
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials." });
-    }
+    // In your auth-routes.js login endpoint:
+const token = jwt.sign(
+  { id: user._id, email: user.email, role: user.role, name: user.name },
+  JWT_SECRET,
+  { expiresIn: "1h" }
+);
 
-    console.log(`User logged in: ${email}`);
-    // Sign and return a JWT token
-    const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: "1h" },
-    );
+
     res.json({ token });
   } catch (error) {
     console.error("Error during login:", error);

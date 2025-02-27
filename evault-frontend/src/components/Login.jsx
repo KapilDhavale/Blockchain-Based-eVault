@@ -1,12 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import "./CSS/Login.css"; // Ensure this path is correct
+import { jwtDecode } from "jwt-decode";
+import { AuthContext } from "../context/AuthContext"; 
+import "./CSS/Login.css";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -16,11 +19,21 @@ const Login = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
+
       const data = await response.json();
       if (response.ok) {
-        console.log("Login successful:", data);
         localStorage.setItem("token", data.token);
-        navigate("/lawyer-dashboard");
+        const decoded = jwtDecode(data.token);
+        login(data.token);
+
+        // Redirect based on role
+        if (decoded.role === "lawyer" || decoded.role === "admin") {
+          navigate("/lawyer-dashboard");
+        } else if (decoded.role === "client") {
+          navigate("/client-dashboard");
+        } else {
+          setError("Unauthorized user role");
+        }
       } else {
         setError(data.message || "Login failed");
       }
@@ -56,17 +69,12 @@ const Login = () => {
           {error && <p className="alert">{error}</p>}
         </div>
         <button id="login-btn" type="submit">Login</button>
-      <p id="registerPrompt">
-  Don't have an account?{" "}
-  <button
-    type="button"
-    id="link-button-login"
-    onClick={() => navigate("/register")}
-  >
-    Register here
-  </button>
-</p>
-
+        <p id="registerPrompt">
+          Don't have an account?{" "}
+          <button type="button" id="link-button-login" onClick={() => navigate("/register")}>
+            Register here
+          </button>
+        </p>
       </form>
     </div>
   );
